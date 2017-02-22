@@ -1,0 +1,128 @@
+%% XeTeX 排版中文辅助宏
+
+\catcode`\@=11
+
+% 常用中文字体
+% Plain 定义的字体有：
+% fam    0  1  2  3  4  5  6  7
+%       rm  i sy ex it sl bf tt
+% ten    x  x  x  x  x  x  x  x
+% seven  x  x  x           x
+% five   x  x  x           x
+\font\tensong = "宋体" at 10pt % 略小于五号字 (10.5pt)
+\font\sevensong = "宋体" at 7pt% 介于六号 (7.5pt) 和小六 (6.5pt) 之间
+\font\fivesong = "宋体" at 5pt % 八号字 (5pt)
+\font\tensongb = "宋体:embolden=1.4" at 10pt % 粗体
+\font\tensongs = "宋体:slant=0.2" at 10pt    % 倾斜体
+% 调整宽度，使得1个汉字=2个西文字符宽
+\font\tensongx = "宋体:extend=1.05" at 10pt
+
+\newfam\zhfam % 数学中的中文字体
+\def\zhmathchars#1#2{\count@=#1\loop
+  \Umathcode\count@=\z@ \zhfam \count@
+  \ifnum\count@<#2 \advance\count@ by\@ne \repeat}
+
+% 在数学环境中使用中文
+% XXX 不含标点和扩展字符集
+\zhmathchars{"4E00}{"9FFF}
+
+% 启用中西文字体切换功能
+\def\zhdualfont{\let\zhfont=}
+% 禁用中西文字体切换功能（例如，希望使用中文字体中的西文字符时）
+% 标点压缩和禁则功能不受影响
+\def\zhsinglefont{\let\zhfont=\relax}
+
+% 启用 XeTeX 字符间插入记号的功能，以便实现字体自动切换和标点压缩功能。
+\XeTeXinterchartokenstate = 1
+
+% 将引号设置为 CJK 标点
+% 取消下列设置可以使用西文字体的引号（如果西文字体支持）。
+\XeTeXcharclass`“=2 % 2: 左标点
+\XeTeXcharclass`”=3 % 3: 右标点
+\XeTeXcharclass`‘=2
+\XeTeXcharclass`’=3
+
+% 将一些全角符号设置为 CJK 字符
+% XXX 尚无法处理它们的禁则
+% TODO 根据需要补充更多符号
+\XeTeXcharclass`·=1 % 1: 普通 CJK 字符
+\XeTeXcharclass`—=1
+\XeTeXcharclass`…=1
+\XeTeXcharclass`￥=1
+
+\def\zh@start{\begingroup
+  \let\zh@start\relax
+  \let\zh@end\endgroup
+  \zhfont}
+
+\newskip\zhspace% 中西文间距
+\newskip\zhglue % 字间距
+\newdimen\zhshrink % 标点压缩的量
+\def\zhhalfwidth{\zhshrink=-.5em}% 半角标点
+\def\zhfullwidth{\zhshrink=\z@}  % 全角标点
+
+\def\zhnormalskips{\ifdim\zhshrink=\z@\else\zhhalfwidth\fi
+  \zhspace=\z@ plus 0.1em
+  \zhglue=\z@ plus 0.1em}
+
+\def\zh@closepunct{\kern\zhshrink\allowbreak} % 右标点压缩右侧
+\def\zh@openpunct{\null\kern\zhshrink}        % 左标点压缩左侧
+
+\chardef\zh@boundary=4095 % 注意：旧版本的 XeTeX 为255
+% 西文转中文
+\XeTeXinterchartoks 0 1 {\zh@start\allowbreak\hskip\zhspace}
+\XeTeXinterchartoks 0 2 {\zh@start\allowbreak\zh@openpunct}
+\XeTeXinterchartoks 0 3 {\zh@start}
+\XeTeXinterchartoks \zh@boundary 1 {\zh@start}
+\XeTeXinterchartoks \zh@boundary 2 {\zh@start\zh@openpunct}
+\XeTeXinterchartoks \zh@boundary 3 {\zh@start}
+% 中文转西文
+\XeTeXinterchartoks 1 0 {\zh@end\allowbreak\hskip\zhspace}
+\XeTeXinterchartoks 2 0 {\zh@end}
+\XeTeXinterchartoks 3 0 {\zh@closepunct\zh@end}
+\XeTeXinterchartoks 1 \zh@boundary {\zh@end}
+\XeTeXinterchartoks 2 \zh@boundary {\zh@end}
+\XeTeXinterchartoks 3 \zh@boundary {\zh@closepunct\zh@end}
+% 汉字之间的伸缩
+\XeTeXinterchartoks 1 1 {\hskip\zhglue}
+% 标点符号
+
+% XXX \sfcode 仅对标点后确实紧随空格的情况生效。
+% 建议使用“半角标点”+手动空格的方式调节标点符号的宽度。
+% TODO 添加更多标点
+\sfcode`。3000\sfcode`？3000\sfcode`！3000%
+\sfcode`：2000\sfcode`；1500\sfcode`，1250%
+\sfcode`、1100\sfcode`”0    \sfcode`’0%
+\sfcode`）0
+
+% 兼容模式：中文标点旁无空格时，处理禁则和压缩。
+\XeTeXinterchartoks 1 2 {\allowbreak\hskip\zhglue\zh@openpunct}
+\XeTeXinterchartoks 1 3 {}
+\XeTeXinterchartoks 2 1 {}
+\XeTeXinterchartoks 2 2 {\kern\zhshrink}
+\XeTeXinterchartoks 2 3 {\nobreak\hskip\zhglue}
+\XeTeXinterchartoks 3 1 {\zh@closepunct\hskip\zhglue}
+\XeTeXinterchartoks 3 2 {\zh@closepunct\hskip\zhglue\zh@openpunct}
+\XeTeXinterchartoks 3 3 {\kern\zhshrink}
+
+% 重定义 Plain 的字体族，使其支持中文字体自动切换
+\def\rm{\fam\z@\zhdualfont\tensong\tenrm} % 罗马字体对应宋体
+\def\it{\fam\itfam\zhdualfont\tensongs\tenit} % 意大利体对应宋体斜体
+\def\sl{\fam\slfam\zhdualfont\tensongs\tensl} % 倾斜体对应宋体斜体
+\def\bf{\fam\bffam\zhdualfont\tensongb\tenbf} % 粗体对应宋体粗体
+\def\tt{\fam\ttfam\zhdualfont\tensongx\tentt} % 打字机体对应宽(1.05倍)宋体
+
+% 默认格式
+\zhhalfwidth \zhnormalskips \rm
+% 数学字体使用宋体
+% 如需临时使用其他字体，请使用 \hbox{...}
+\textfont\zhfam=\tensong
+\scriptfont\zhfam=\sevensong
+\scriptscriptfont\zhfam=\fivesong
+
+% Plain TeX 默认每节首段不缩进，改成缩进
+\outer\def\beginsection#1\par{\vskip\z@ plus.3\vsize\penalty-250
+  \vskip\z@ plus-.3\vsize\bigskip\vskip\parskip
+  \message{#1}\leftline{\bf#1}\nobreak\smallskip}
+
+\catcode`@=12

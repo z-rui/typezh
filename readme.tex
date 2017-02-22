@@ -1,0 +1,189 @@
+% 纸张：A4
+\hoffset=6.35mm
+\hsize=146.5mm
+\vsize=246.2mm
+
+\input typezh
+\baselineskip=13.5pt % 中文文档适合较大的行距
+
+% 本文使用的额外的字体
+\font\titlezh = "宋体" at 14.5pt
+\font\titlerm = cmr7 scaled\magstep4
+\font\tenkai = "楷体" at 10pt
+\font\tenhei = "黑体" at 10pt
+\font\tenss = cmss10
+\font\eightrm = cmr8
+\font\manual = manfnt scaled\magstep1
+
+% 将中文字体设置为…
+\def\kai{\let\zhfont\tenkai} % 楷体
+\def\hei{\let\zhfont\tenhei} % 黑体
+
+\def\title#1\par % 标题
+{\vbox to .5in{\zhdualfont\titlezh\titlerm\vss\centerline{#1}\bigskip}}
+\def\R{\raise .7ex\hbox % ®
+{\ooalign{$\scriptstyle\bigcirc$\cr\fiverm\hss R\hss}}}
+\def\hex#1{\hbox{\rm\H{}\tt#1}} % 十六进制格式
+\def\<#1>{\langle\hbox{#1}\rangle} % 〈尖括号文字〉
+\def\dbend{{\manual\char127}} % “危险弯道”
+\def\danger{\noindent\hang\hangafter=-2 % “危险弯道”段落
+\lower 1.5pt \hbox to 0pt{\hskip -\hangindent\dbend\hss}}
+\def\@{\hskip\zhglue} % 手动修正被\@{分组\@}破坏的汉字间 glue
+% FIXME 可否在 typezh 中解决这个问题？
+
+\input rotate % 包括 \rotf
+\def\XeTeX{\setbox0\hbox{E} % XeTeX logo
+X\kern-.125em\lower .5ex\hbox{\rotf0}\kern-.1667em\TeX}
+\def\sc{\eightrm}
+\def\LaTeX{L\kern -.36em\raise .5ex\hbox{\sc A}\kern-.15em\TeX} % LaTeX logo
+
+% |...| 原样排版 （多用于排版 TeX 代码）
+\catcode`\|=\active
+{\def\do#1{\catcode`\noexpand#1=12}
+\xdef\uncatcodespecials{\dospecials}}
+\outer\def|{\bgroup\uncatcodespecials\obeyspaces\tt\catcode`\|=2}
+
+%%正文开始
+
+\title typezh: \XeTeX\ 排版中文辅助宏
+
+\XeTeX\ 是 \TeX\ 排版系统的扩展， 增加了对 Unicode 和 OpenType\R\ 的支持。
+因此可被用于中文排版。
+
+typezh 利用 |\XeTeXinterchartoks| 机制实现中文排版所需的字体自动切换%
+和标点间距调整功能。 Plain \TeX\ 用户可以通过 $$\hbox{|\input typezh|}$$
+加载这些功能。 \LaTeX\ 用户建议使用功能更加完善的 xeCJK 宏包或者 C\TeX\ 套装。
+
+typezh 以能进行中文排版为目标， 提供尽可能少的功能， 而不是成为一个万能的
+“宏包”。 和 Plain \TeX\ 一样， 仅提供了一个字号 （10 磅） 的字体。
+用户如果需要更多的样式， 应当创建自己的格式文件， 并将 typezh 的代码
+（可以做一些本地修改） 包含于其中。
+
+\beginsection 1. 中西文字体切换
+
+你可以自由地书写{%
+\def\\#1{{\bfmt#1\efmt}}%
+\def\bfmt#1{\tt\char`\{\string#1#1\space}%
+\def\efmt{\/\tt\char`\}}%
+\\{\rm 罗马体 Roman}、
+\\{\it 意大利体 Italic}、
+\\{\sl 倾斜体 Slanted}、
+\\{\bf 粗体 Boldface} 和
+\\{\tt 电报体 Teletype}。}
+
+typezh 默认使用宋体排版所有中文， 这看起来比较单调， 字体渲染器给出的粗体%
+和倾斜体的效果也不是很好。 另外， 在不同的系统上， 所需的字体名称可能并不是
+“宋体”。 因此， 使用者应当修改源文件， 以符合自己的需求。
+例如， 有些人可能希望使用\@{\kai 楷体\@}配合 {\it Italic\/}，
+{\hei 黑体\@}配合 {\bf Boldface}。\footnote{*}
+{本文作者认为这是一种不恰当的设计， 因为\@{\hei 黑体\@}属于非衬线体
+({\tenss sans-serif\/})， 不宜与衬线体 ({\bf serif\/}) 搭配。}
+
+另外注意， 电报体属于等宽字体， 因此 typezh 进行了特殊处理 （将字体加宽 5\%），
+使得一个汉字占据两个西文字符的宽度：
+$$\vbox{\tt
+% 下面的 \hbox 画了若干条竖线， 以体现中文和西文的对齐
+\hbox{\dimen0=\ht\strutbox\advance\dimen0\baselineskip
+\vrule height \dimen0 depth \dp\strutbox width 0pt
+\dimen0=4em\advance\dimen0 by-.4pt
+\def\do{\vrule\hskip\dimen0}%
+\do\do\do\do\do\hskip-2.5em\do\do\do\unskip
+}\vskip -2\baselineskip
+%%
+\hbox{The quick brown fox jumps over the lazy dog. The quick...}
+\hbox{那只敏捷的棕毛狐狸跃过了那条懒狗。 那只敏捷的……}
+}$$
+
+\danger
+当需要手动指定字体时， 可以使用 |\zhsinglefont|~宏禁用字体自动切换功能，
+这样你就可以像正常使用 Plain \TeX\ 那样， 指定任意的字体。
+例如， 上面的楷体文本可以使用 $$\hbox{|\zhsinglefont\tenkai 楷体|}$$ 得到。
+（其中 |\tenkai| 是作者载入的 10 磅楷体字体。） 但是这样也将会使用该字体%
+排版西文字符， 并很可能得到 {\tenkai some ugly letters.}
+使用 $$\hbox{|\zhdualfont|}\<字体>$$ 可以仅设置中文 （实际上是 Unicode
+字符集中的 “中日韩表意文字”） 及标点的字体， 而西文字体仍然使用当前的字体。
+一个常见的用法是 $$\hbox{|\zhdualfont|}\<中文字体>\<西文字体>$$
+同时设置中西文的字体； 这对于格式设计者而言是很有用的。
+作者的建议是将这两个宏封装在格式中， 而不要出现在正文里。
+
+\beginsection 2. 标点压缩
+
+\begingroup\zhhalfwidth
+由于中文字体中标点占据了一个字符的宽度，为了提高排版质量，需要对标点中的空白%
+进行压缩。 typezh 默认将中文标点压缩至半个汉字的宽度（正如你所见，本段的标点%
+就是这样的风格）。这和 \TeX\ 的西文标点采用了同样的约定：标点本身不含空白。%
+作者建议用户在标点符号的旁边手动添加空格（尽管很多人并不习惯这样做），%
+就和西文排版习惯一样。
+\endgroup
+
+\begingroup\zhfullwidth
+另一些人使用另一种标点符号的风格。即不压缩标点，让它保持一个汉字的宽度%
+（正如你所见，本段的标点就是这样的风格）。常在屏幕上阅读中文文本的用户%
+可能会习惯于这种风格，但是从排版角度而言并不美观：“引号”和它左侧的冒号%
+之间的空白看起来过大了。使用 |\zhfullwidth|~宏选择这种风格。%
+要恢复默认的风格，使用 |\zhhalfwidth|。
+\endgroup
+
+一些用户可能习惯其他的风格， 例如： 标点符号默认为一个汉字的宽度，
+但是位于行尾的标点将被压缩到半个汉字的宽度。 typezh 默认不支持这种风格，
+用户需要修改源代码来指定她所需要的具体的规则。
+
+\danger
+当用户需要使用其他字号的字体时， 应当在载入字体之后使用 |\zhnormalskips|~宏，
+重新设置标点压缩的大小。 格式设计者在定义诸如 |\tenpoint|、 |\ninepoint|
+一类的宏时， 尤其要注意这一点。
+
+\beginsection 3. 标点禁则
+
+由于中文用户大多不在标点符号旁边添加空格， 除了带来空白压缩的问题以外，
+还带来了禁则的问题——\TeX\ 不知道应该在哪里断行。 typezh 处理了这些情况，
+使得 \TeX\ 可以在左标点的左侧或者右标点的右侧断行； 反过来的情况，
+则禁止断行。
+
+\beginsection 4. 数学公式中使用中文
+
+在技术文档中， 偶尔会在公式中使用中文， 例如作为变量的下标。
+typezh 允许直接在 \TeX\ 的数学模式中使用中文， 并以恰当的字体显示。
+% 因为 |...| 不能作为 \displaylines 宏的参数，
+% 所以用 box0 来暂存排版内容。
+$$\setbox0\hbox{|F_浮 = \rho_液 g V_排|}
+\displaylines{F_浮 = \rho_液 g V_排\cr \box0}$$
+
+在目前的 typezh 实现中， 仅允许在公式中使用基本的 CJK 字符 (Unicode 范围
+\hex{4E00}--\hex{9FFF})。 罕见的字符很少会出现在公式中。
+另外， 不提倡在公式中使用中文标点， 因为逗号的水平位置和西文字母%
+不太匹配， 而句号容易和小写字母~o 作下标弄混。
+
+\beginsection 5. 字距调整
+
+许多中文排版工具会在中西文之间自动添加空白， 以免中文和Western text之间%
+过于拥挤， 影响美观。 typezh 默认不做这样的事， 简化了实现， 而且把控制权%
+完全交给用户。 但是， 用户也可以选择设置 |\zhspace| 参数， 指定中西文之间%
+自动插入的空白。
+
+在每个汉字之间， typezh 会自动插入空白。 如果不这样做， 那么 \TeX\ 将无法%
+通过调整字间距， 而使文本边界对齐。
+（对于西文而言， 单词之间的空白是可以调整的。）
+设置 |\zhglue| 参数调节汉字之间的间距。
+
+\danger 但是， 上述的机制在较复杂的情况中经常失效， 尤其是遇到有分组或者 box
+的情况。 例如， 设置 |\zhspace=.2em plus .2em minus .1em|，
+则 $$\hbox{|使用\TeX 排版中文, 使用{\TeX}排版中文|}$$ 给出的结果是
+$$\hbox{\zhspace=.2em plus .2em minus .1em
+使用\TeX 排版中文, 使用{\TeX}排版中文}$$
+这也是 typezh 默认不调整中西文间距的理由之一。
+在一些罕见的情况下， 例如使用分组切换中文字体时， 应当在分组前后添加
+|\hskip\zhglue|， 以使得该文本和周围文本的间距被正确处理。
+
+\danger 例如， 在排版这篇文档时， 作者定义 |\def\@{\hskip\zhglue}|，
+当作者在正文中插入\@{\bf 粗体字\@}， 而 \TeX\ 又不得不调整字间距时， 比较：
+$$\vbox{\hbadness=10000
+\setbox0\hbox{|\@{\bf 粗体字\@}|}
+\setbox2\hbox{|{\bf 粗体字}|}
+\halign{&\hss#\hss\cr
+\box0\qquad&\hbox spread 3em{在正文中插入\@{\bf 粗体字\@}时……}\cr
+\box2\qquad&\hbox spread 3em{在正文中插入{\bf 粗体字}时……}\cr
+}}$$
+分组还会破坏汉字之间的断行， 所以在汉字的上下文中使用分组时， 请务必小心。
+
+\bye
